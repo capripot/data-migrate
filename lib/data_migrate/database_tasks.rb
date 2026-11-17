@@ -131,20 +131,20 @@ module DataMigrate
       end
     end
 
-    def schema_dump_path(db_config, format = ActiveRecord.schema_format)
+    def schema_dump_path(db_config, format = schema_format)
       return ENV["DATA_SCHEMA"] if ENV["DATA_SCHEMA"]
 
       # We only require a schema.rb file for the primary database
-      return unless db_config.primary?
+      return unless primary?(db_config)
 
-      File.join(File.dirname(ActiveRecord::Tasks::DatabaseTasks.schema_dump_path(db_config, format)), schema_file_type)
+      File.join(File.dirname(rails_schema_dump_path(db_config, format)), schema_file_type)
     end
 
     # Override this method from `ActiveRecord::Tasks::DatabaseTasks`
     # to ensure that the sha saved in ar_internal_metadata table
     # is from the original schema.rb file
-    def schema_sha1(file)
-      ActiveRecord::Tasks::DatabaseTasks.schema_dump_path(ActiveRecord::Base.configurations.configs_for(env_name: ActiveRecord::Tasks::DatabaseTasks.env, name: "primary"))
+    def schema_sha1(_file)
+      super(rails_schema_dump_path(ActiveRecord::Base.configurations.configs_for(env_name: ActiveRecord::Tasks::DatabaseTasks.env, name: "primary")))
     end
 
     def forward(step = 1)
@@ -252,6 +252,16 @@ module DataMigrate
     end
 
     private
+
+    # The path of schema.rb: Rails 7.0+ has schema_dump_path, Rails 6.1 only
+    # dump_filename.
+    def rails_schema_dump_path(db_config, format = schema_format)
+      if ActiveRecord::Tasks::DatabaseTasks.respond_to?(:schema_dump_path)
+        ActiveRecord::Tasks::DatabaseTasks.schema_dump_path(db_config, format)
+      else
+        ActiveRecord::Tasks::DatabaseTasks.dump_filename(db_config.name, format)
+      end
+    end
 
     def database_exists?(connection)
       if connection.respond_to?(:database_exists?)  # Rails 7.1+

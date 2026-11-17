@@ -1,6 +1,7 @@
 # Changelog
 
 # Unreleased
+- Fix `db:schema:load:with_data` and `db:prepare:with_data` on Rails 6.1, and store the checksum of `schema.rb` instead of its path when loading `data_schema.rb` - #295 https://github.com/ilyakatz/data-migrate/issues/295
 
 # 11.4.0
 - Make `status` command find migrations in subdirectories https://github.com/ilyakatz/data-migrate/pull/367
